@@ -1,0 +1,10 @@
+update public.menu_items set image_url = 'https://hcekufpitfscrwpcwzxy.supabase.co/storage/v1/object/public/images/ff2769a4-564c-4fbd-a061-acff3d79c176%2Fseed-biryani.jpg' where name = 'Chicken Biryani';
+update public.menu_items set image_url = 'https://hcekufpitfscrwpcwzxy.supabase.co/storage/v1/object/public/images/ff2769a4-564c-4fbd-a061-acff3d79c176%2Fseed-burger.jpg' where name = 'Beef Burger';
+update public.menu_items set image_url = 'https://hcekufpitfscrwpcwzxy.supabase.co/storage/v1/object/public/images/ff2769a4-564c-4fbd-a061-acff3d79c176%2Fseed-pizza.jpg' where name = 'Margherita Pizza';
+update public.menu_items set image_url = 'https://hcekufpitfscrwpcwzxy.supabase.co/storage/v1/object/public/images/ff2769a4-564c-4fbd-a061-acff3d79c176%2Fseed-salad.jpg' where name = 'Caesar Salad';
+update public.menu_items set image_url = 'https://hcekufpitfscrwpcwzxy.supabase.co/storage/v1/object/public/images/ff2769a4-564c-4fbd-a061-acff3d79c176%2Fseed-fish.jpg' where name = 'Grilled Fish';
+update public.menu_items set image_url = 'https://hcekufpitfscrwpcwzxy.supabase.co/storage/v1/object/public/images/ff2769a4-564c-4fbd-a061-acff3d79c176%2Fseed-lassi.jpg' where name = 'Mango Lassi';
+update public.menu_items set image_url = 'https://hcekufpitfscrwpcwzxy.supabase.co/storage/v1/object/public/images/ff2769a4-564c-4fbd-a061-acff3d79c176%2Fseed-espresso.jpg' where name = 'Espresso';
+update public.menu_items set image_url = 'https://hcekufpitfscrwpcwzxy.supabase.co/storage/v1/object/public/images/ff2769a4-564c-4fbd-a061-acff3d79c176%2Fseed-cake.jpg' where name = 'Chocolate Cake';
+update public.menu_items set image_url = 'https://hcekufpitfscrwpcwzxy.supabase.co/storage/v1/object/public/images/ff2769a4-564c-4fbd-a061-acff3d79c176%2Fseed-wings.jpg' where name = 'Chicken Wings';
+update public.menu_items set image_url = 'https://hcekufpitfscrwpcwzxy.supabase.co/storage/v1/object/public/images/ff2769a4-564c-4fbd-a061-acff3d79c176%2Fseed-lime-soda.jpg' where name = 'Fresh Lime Soda';

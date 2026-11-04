@@ -1,0 +1,55 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1793527705715,
+      "tag": "0000_tax_options",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793528192015,
+      "tag": "0001_store_members",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793528362496,
+      "tag": "0002_store_member_invite_rpcs",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793610100687,
+      "tag": "0003_customers_dues_points",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793610853844,
+      "tag": "0004_product_brand_discount_vat",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793611009331,
+      "tag": "0005_inventory_and_manager_pin",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793611203453,
+      "tag": "0006_roles_returns_commission_shifts",
+      "breakpoints": true
+    }
+  ]
+}

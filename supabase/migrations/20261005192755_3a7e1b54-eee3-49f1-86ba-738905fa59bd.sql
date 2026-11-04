@@ -1,0 +1,1 @@
+revoke all on function public.log_activity() from public, anon, authenticated;

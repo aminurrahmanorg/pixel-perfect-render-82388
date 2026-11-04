@@ -1,0 +1,1 @@
+ALTER TABLE public.menu_items ADD COLUMN IF NOT EXISTS brand text, ADD COLUMN IF NOT EXISTS discount_percent numeric NOT NULL DEFAULT 0 CHECK (discount_percent >= 0 AND discount_percent <= 100), ADD COLUMN IF NOT EXISTS tax_percent numeric CHECK (tax_percent IS NULL OR tax_percent >= 0);
