@@ -821,6 +821,10 @@ export type Database = {
       add_store_member_by_email: { Args: { p_email: string }; Returns: string }
       current_store_owner: { Args: never; Returns: string }
       current_store_role: { Args: never; Returns: string }
+      delete_product_category: {
+        Args: { p_id: string; p_replacement_id?: string | null }
+        Returns: undefined
+      }
       list_store_members: {
         Args: never
         Returns: {
@@ -841,6 +845,10 @@ export type Database = {
         }[]
       }
       remove_store_member: { Args: { p_id: string }; Returns: undefined }
+      rename_product_category: {
+        Args: { p_id: string; p_name: string }
+        Returns: undefined
+      }
       seed_sample_data: { Args: never; Returns: undefined }
       seed_sample_data_for: { Args: { uid: string }; Returns: undefined }
       set_member_role: {
