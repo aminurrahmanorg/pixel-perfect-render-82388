@@ -118,7 +118,15 @@ function ItemDialog({ item }: { item?: MenuItem }) {
             ? await supabase.from("menu_items").update(rest).eq("id", item.id).select().single()
             : await supabase.from("menu_items").insert(rest).select().single();
           if (error) return void toast.error(error.message);
-          if (!item && v.track_stock && opening > 0) await supabase.from("stock_moves").insert({ menu_item_id: saved.id, qty: opening, kind: "opening", unit_cost: v.cost });
+          if (!item && v.track_stock && opening > 0) {
+            const { error: stockError } = await supabase.from("stock_moves").insert({ owner_id: saved.owner_id, menu_item_id: saved.id, qty: opening, kind: "opening", unit_cost: v.cost });
+            if (stockError) {
+              toast.error(`Product saved, but opening stock could not be recorded: ${stockError.message}`);
+              setOpen(false);
+              refresh();
+              return;
+            }
+          }
           setOpen(false); refresh();
         }}>
           <div className="space-y-1.5"><Label>Photo</Label><ImageUpload value={v.image_url} onChange={(u) => setV({ ...v, image_url: u })} /></div>

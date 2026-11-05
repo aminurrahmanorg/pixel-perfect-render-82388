@@ -75,8 +75,10 @@ function StockInDialog() {
           e.preventDefault();
           if (!v.item) return void toast.error("Choose a product");
           if (!v.qty) return void toast.error("Quantity can't be 0");
+          const product = items.find((m) => m.id === v.item);
+          if (!product) return void toast.error("Selected product could not be found");
           const qty = v.kind === "purchase" ? Math.abs(v.qty) : v.qty;
-          const { error } = await supabase.from("stock_moves").insert({ menu_item_id: v.item, qty, kind: v.kind, unit_cost: v.unit_cost, supplier: v.supplier || null, move_date: todayIn(r?.time_zone) });
+          const { error } = await supabase.from("stock_moves").insert({ owner_id: product.owner_id, menu_item_id: product.id, qty, kind: v.kind, unit_cost: v.unit_cost, supplier: v.supplier || null, move_date: todayIn(r?.time_zone) });
           if (error) return void toast.error(error.message);
           await supabase.from("menu_items").update({ track_stock: true }).eq("id", v.item);
           if (v.kind === "purchase" && v.account !== "none" && v.unit_cost > 0) {
