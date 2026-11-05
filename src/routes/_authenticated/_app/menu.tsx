@@ -106,7 +106,7 @@ function ItemDialog({ item }: { item?: MenuItem }) {
       <DialogTrigger asChild>
         {item ? <Button size="icon" variant="ghost" aria-label="Edit"><Pencil className="size-4" /></Button> : <Button><Plus /> Add item</Button>}
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-xl overflow-y-auto p-4 sm:p-6">
         <DialogHeader><DialogTitle>{item ? "Edit item" : "Add product"}</DialogTitle></DialogHeader>
         <form className="space-y-4" onSubmit={async (e) => {
           e.preventDefault();

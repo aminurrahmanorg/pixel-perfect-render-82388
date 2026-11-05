@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { r2, todayIn, useAccounts, useCustomerPayments, useCustomers, useMenuItems, useMoney, useProductCategories, useRefresh, useRestaurant, useSales, useStaff, type MenuItem } from "@/lib/data";
@@ -37,6 +38,10 @@ function PosPage() {
   const { data: allSales = [] } = useSales();
   const { data: custPayments = [] } = useCustomerPayments();
   const [customerId, setCustomerId] = useState("walkin");
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
+  const [quickCustomerName, setQuickCustomerName] = useState("");
+  const [quickCustomerPhone, setQuickCustomerPhone] = useState("");
+  const [quickAdding, setQuickAdding] = useState(false);
   const [paid, setPaid] = useState<string>("");
   const [usePoints, setUsePoints] = useState(false);
   const [discount, setDiscount] = useState(0);
@@ -113,12 +118,18 @@ function PosPage() {
   }
 
   async function quickAdd() {
-    const name = prompt("Customer name");
-    if (!name?.trim()) return;
-    const phone = prompt("Phone (optional)") || null;
-    const { data, error } = await supabase.from("customers").insert({ name: name.trim(), phone }).select().single();
-    if (error) return void toast.error(error.message);
-    await refresh(); setCustomerId(data.id);
+    if (!quickCustomerName.trim()) return void toast.error("Customer name is required");
+    setQuickAdding(true);
+    try {
+      const { data, error } = await supabase.from("customers").insert({ name: quickCustomerName.trim(), phone: quickCustomerPhone.trim() || null }).select().single();
+      if (error) return void toast.error(error.message);
+      await refresh(); setCustomerId(data.id); setQuickAddOpen(false); setQuickCustomerName(""); setQuickCustomerPhone("");
+      toast.success("Customer added");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not add customer");
+    } finally {
+      setQuickAdding(false);
+    }
   }
 
   async function charge(print: boolean) {
@@ -208,7 +219,7 @@ function PosPage() {
           <p className="mb-2 text-center text-xs text-muted-foreground">Tap items to add them to the order</p>
         )}
         <div className="space-y-1"><Label className="text-xs">Customer</Label>
-          <Select value={customerId} onValueChange={(v) => { if (v === "new") return void quickAdd(); setCustomerId(v); setUsePoints(false); }}>
+          <Select value={customerId} onValueChange={(v) => { if (v === "new") { setQuickCustomerName(""); setQuickCustomerPhone(""); setQuickAddOpen(true); return; } setCustomerId(v); setUsePoints(false); }}>
             <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
             <SelectContent><SelectItem value="walkin">Walk-in</SelectItem><SelectItem value="new">+ New customer</SelectItem>{customers.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}{c.phone ? ` · ${c.phone}` : ""}</SelectItem>)}</SelectContent>
           </Select>
@@ -317,6 +328,19 @@ function PosPage() {
           <div className="min-h-0 flex-1">{cart}</div>
         </SheetContent>
       </Sheet>
+      <Dialog open={quickAddOpen} onOpenChange={setQuickAddOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Add new customer</DialogTitle></DialogHeader>
+          <form className="space-y-4" onSubmit={(event) => { event.preventDefault(); void quickAdd(); }}>
+            <div className="space-y-2"><Label htmlFor="quick-customer-name">Customer name</Label><Input id="quick-customer-name" autoFocus required value={quickCustomerName} onChange={(event) => setQuickCustomerName(event.target.value)} /></div>
+            <div className="space-y-2"><Label htmlFor="quick-customer-phone">Phone (optional)</Label><Input id="quick-customer-phone" type="tel" value={quickCustomerPhone} onChange={(event) => setQuickCustomerPhone(event.target.value)} /></div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setQuickAddOpen(false)}>Cancel</Button>
+              <Button type="submit" disabled={quickAdding}>{quickAdding ? "Adding..." : "Add customer"}</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
