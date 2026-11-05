@@ -156,19 +156,12 @@ function PosPage() {
   }
 
   const cart = (
-      <div className="flex h-full flex-col">
-        {cust && (
-          <div className="mb-2 flex shrink-0 items-center justify-between gap-2 rounded-full bg-primary/10 py-1 pl-3 pr-1.5 text-xs font-medium text-primary">
-            <span className="flex min-w-0 items-center gap-1.5"><UserRound className="size-3.5 shrink-0" /><span className="truncate">{cust.name}{cust.tier ? ` · ${cust.tier}` : ""}</span></span>
-            <button type="button" aria-label="Remove customer" className="flex size-5 shrink-0 items-center justify-center rounded-full hover:bg-primary/15" onClick={() => { setCustomerId("walkin"); setUsePoints(false); }}>✕</button>
-          </div>
-        )}
-        <div className="min-h-0 flex-1 space-y-2 overflow-y-auto">
-        {lines.length === 0 && (
-          <div className="flex h-full flex-col items-center justify-center gap-2 py-10 text-center text-sm text-muted-foreground">
-            <ShoppingBag className="size-8" /> Tap items to add them to the order
-          </div>
-        )}
+      <div className="flex h-full min-h-0 flex-col overflow-hidden">
+        <div className={cn(
+          "min-h-0 shrink-0 overflow-y-auto overscroll-contain pr-1 transition-[flex-basis] duration-300 ease-in-out",
+          lines.length ? "basis-[45%]" : "basis-0",
+        )}>
+        <div className="space-y-2">
         {lines.map((l) => {
           const m = get(l.id)!;
           return (
@@ -176,7 +169,7 @@ function PosPage() {
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">{m.name}</p>
                 <p className="num text-xs text-muted-foreground">{money(Number(m.price))} each</p>
-                <div className="mt-4 flex items-center gap-1.5 pt-3">
+                <div className="mt-2 flex items-center gap-1.5">
                   <span className="text-[11px] font-medium text-muted-foreground">Disc.</span>
                   <div className="flex rounded-full border text-[11px]">
                     {(["pct", "amt"] as const).map((t) => (
@@ -199,7 +192,21 @@ function PosPage() {
           );
         })}
       </div>
-      <div className="mt-3 space-y-3 border-t pt-3">
+      </div>
+      <div className={cn(
+        "flex min-h-0 shrink-0 flex-col overflow-y-auto overscroll-contain border-t pt-2 transition-[flex-basis] duration-300 ease-in-out",
+        lines.length ? "basis-[55%]" : "basis-full",
+        lines.length ? "justify-start" : "justify-end",
+      )}>
+        {cust && (
+          <div className="mb-2 flex shrink-0 items-center justify-between gap-2 rounded-full bg-primary/10 py-1 pl-3 pr-1.5 text-xs font-medium text-primary">
+            <span className="flex min-w-0 items-center gap-1.5"><UserRound className="size-3.5 shrink-0" /><span className="truncate">{cust.name}{cust.tier ? ` · ${cust.tier}` : ""}</span></span>
+            <button type="button" aria-label="Remove customer" className="flex size-5 shrink-0 items-center justify-center rounded-full hover:bg-primary/15" onClick={() => { setCustomerId("walkin"); setUsePoints(false); }}>✕</button>
+          </div>
+        )}
+        {lines.length === 0 && (
+          <p className="mb-2 text-center text-xs text-muted-foreground">Tap items to add them to the order</p>
+        )}
         <div className="space-y-1"><Label className="text-xs">Customer</Label>
           <Select value={customerId} onValueChange={(v) => { if (v === "new") return void quickAdd(); setCustomerId(v); setUsePoints(false); }}>
             <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
