@@ -12,7 +12,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { r2, todayIn, useAccounts, useCustomerPayments, useCustomers, useMenuItems, useMoney, useProductCategories, useRefresh, useRestaurant, useSales, useStaff, type MenuItem } from "@/lib/data";
 import { calcCart } from "@/lib/pricing";
 import { customerDue, earnPoints, redeemValue } from "@/lib/customers";
-import { Minus, Plus, Search, ShoppingBag, Trash2, UserRound } from "lucide-react";
+import { Minus, Plus, Search, ShoppingBag, ShoppingCart, Trash2, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -216,7 +216,12 @@ function PosPage() {
           </div>
         )}
         {lines.length === 0 && (
-          <p className="mb-2 text-center text-xs text-muted-foreground">Tap items to add them to the order</p>
+          <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 text-center text-sm text-muted-foreground">
+            <div className="mb-1 flex size-12 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+              <ShoppingCart className="size-6" aria-hidden="true" />
+            </div>
+            <p className="mb-2 text-xs">Tap items to add them to the order</p>
+          </div>
         )}
         <div className="space-y-1"><Label className="text-xs">Customer</Label>
           <Select value={customerId} onValueChange={(v) => { if (v === "new") { setQuickCustomerName(""); setQuickCustomerPhone(""); setQuickAddOpen(true); return; } setCustomerId(v); setUsePoints(false); }}>
