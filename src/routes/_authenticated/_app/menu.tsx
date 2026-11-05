@@ -1,13 +1,14 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader, Panel } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { useMenuItems, useMoney, useRefresh, type MenuItem } from "@/lib/data";
+import { useMenuItems, useMoney, useProductCategories, useRefresh, type MenuItem } from "@/lib/data";
 import { Loader2, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
@@ -21,11 +22,12 @@ export const Route = createFileRoute("/_authenticated/_app/menu")({
 
 function MenuPage() {
   const { data: items = [] } = useMenuItems();
+  const { data: categories = [] } = useProductCategories();
   const money = useMoney();
   const refresh = useRefresh();
   return (
     <div>
-      <PageHeader title="Products" subtitle="Selling price, cost and margin for each product" action={<ItemDialog />} />
+      <PageHeader title="Products" subtitle="Selling price, cost and margin for each product" action={<div className="flex gap-2"><Button asChild variant="outline"><Link to="/categories">Manage categories</Link></Button><ItemDialog /></div>} />
       <Panel>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -72,8 +74,15 @@ const empty: Form = { name: "", category: "General", brand: null, price: 0, cost
 
 function ItemDialog({ item }: { item?: MenuItem }) {
   const refresh = useRefresh();
+  const { data: categories = [] } = useProductCategories();
   const [open, setOpen] = useState(false);
   const [v, setV] = useState<Form>(empty);
+  useEffect(() => {
+    const firstCategory = categories[0]?.name;
+    if (open && !item && !v.category && firstCategory) {
+      setV((current) => ({ ...current, category: firstCategory }));
+    }
+  }, [categories, item, open, v.category]);
   const identify = useServerFn(aiProductFromPhoto);
   const [aiBusy, setAiBusy] = useState(false);
   async function fromPhoto(file: File) {
@@ -84,14 +93,15 @@ function ItemDialog({ item }: { item?: MenuItem }) {
       const r = await identify({ data: { image } });
       if (r.error || !r.product) return void toast.error(r.error ?? "Couldn't recognise it");
       const p = r.product;
-      setV((x) => ({ ...x, name: p.name || x.name, category: p.category || x.category, brand: p.brand ?? x.brand, barcode: p.barcode ?? x.barcode, price: p.price || x.price }));
+      const category = categories.find((c) => c.name.toLowerCase() === p.category?.toLowerCase())?.name;
+      setV((x) => ({ ...x, name: p.name || x.name, category: category ?? x.category, brand: p.brand ?? x.brand, barcode: p.barcode ?? x.barcode, price: p.price || x.price }));
       toast.success("Filled from photo — check and save");
     } catch { toast.error("AI couldn't read the photo"); } finally { setAiBusy(false); }
   }
   return (
     <Dialog open={open} onOpenChange={(o) => {
       setOpen(o);
-      if (o) setV(item ? { name: item.name, category: item.category, brand: item.brand, price: Number(item.price), cost: Number(item.cost), active: item.active, image_url: item.image_url, discount_percent: Number(item.discount_percent ?? 0), tax_percent: item.tax_percent, sku: item.sku, barcode: item.barcode, track_stock: item.track_stock, low_stock_at: Number(item.low_stock_at) } : empty);
+      if (o) setV(item ? { name: item.name, category: item.category, brand: item.brand, price: Number(item.price), cost: Number(item.cost), active: item.active, image_url: item.image_url, discount_percent: Number(item.discount_percent ?? 0), tax_percent: item.tax_percent, sku: item.sku, barcode: item.barcode, track_stock: item.track_stock, low_stock_at: Number(item.low_stock_at) } : { ...empty, category: categories[0]?.name ?? "" });
     }}>
       <DialogTrigger asChild>
         {item ? <Button size="icon" variant="ghost" aria-label="Edit"><Pencil className="size-4" /></Button> : <Button><Plus /> Add item</Button>}
@@ -100,6 +110,7 @@ function ItemDialog({ item }: { item?: MenuItem }) {
         <DialogHeader><DialogTitle>{item ? "Edit item" : "Add product"}</DialogTitle></DialogHeader>
         <form className="space-y-4" onSubmit={async (e) => {
           e.preventDefault();
+          if (!v.category) return void toast.error("Add a category before saving a product");
           if (v.price < 0 || v.cost < 0) return void toast.error("Prices can't be negative");
           if (v.discount_percent < 0 || v.discount_percent > 100) return void toast.error("Discount must be 0–100%");
           const { stock_qty: opening = 0, ...rest } = v;
@@ -117,7 +128,14 @@ function ItemDialog({ item }: { item?: MenuItem }) {
           </label>}
           <div className="space-y-1.5"><Label>Name</Label><Input required value={v.name} onChange={(e) => setV({ ...v, name: e.target.value })} /></div>
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5"><Label>Category</Label><Input value={v.category} onChange={(e) => setV({ ...v, category: e.target.value })} /></div>
+            <div className="space-y-1.5">
+              <Label>Category</Label>
+              <Select value={v.category} onValueChange={(category) => setV({ ...v, category })}>
+                <SelectTrigger><SelectValue placeholder="Choose a category" /></SelectTrigger>
+                <SelectContent>{categories.map((category) => <SelectItem key={category.id} value={category.name}>{category.name}</SelectItem>)}</SelectContent>
+              </Select>
+              {categories.length === 0 && <p className="text-xs text-muted-foreground">Add a category first from <Link className="text-primary underline" to="/categories">Categories</Link>.</p>}
+            </div>
             <div className="space-y-1.5"><Label>Brand</Label><Input placeholder="Optional" value={v.brand ?? ""} onChange={(e) => setV({ ...v, brand: e.target.value || null })} /></div>
           </div>
           <div className="grid grid-cols-2 gap-3">

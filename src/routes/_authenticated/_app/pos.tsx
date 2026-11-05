@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { r2, todayIn, useAccounts, useCustomerPayments, useCustomers, useMenuItems, useMoney, useRefresh, useRestaurant, useSales, useStaff, type MenuItem } from "@/lib/data";
+import { r2, todayIn, useAccounts, useCustomerPayments, useCustomers, useMenuItems, useMoney, useProductCategories, useRefresh, useRestaurant, useSales, useStaff, type MenuItem } from "@/lib/data";
 import { calcCart } from "@/lib/pricing";
 import { customerDue, earnPoints, redeemValue } from "@/lib/customers";
 import { Minus, Plus, Search, ShoppingBag, Trash2, UserRound } from "lucide-react";
@@ -25,6 +25,7 @@ type Line = { id: string; qty: number; dType?: "pct" | "amt"; dVal?: number };
 function PosPage() {
   const { data: r } = useRestaurant();
   const { data: menu = [] } = useMenuItems();
+  const { data: productCategories = [] } = useProductCategories();
   const { data: accounts = [] } = useAccounts();
   const money = useMoney();
   const refresh = useRefresh();
@@ -50,7 +51,7 @@ function PosPage() {
   }, [accounts, account]);
 
   const active = menu.filter((m) => m.active);
-  const cats = useMemo(() => ["All", ...Array.from(new Set(active.map((m) => m.category)))], [active]);
+  const cats = useMemo(() => ["All", ...Array.from(new Set([...productCategories.map((c) => c.name), ...active.map((m) => m.category)]))], [active, productCategories]);
   const shown = active.filter((m) => (cat === "All" || m.category === cat) && `${m.name} ${m.brand ?? ""} ${m.sku ?? ""} ${m.barcode ?? ""}`.toLowerCase().includes(q.toLowerCase()));
   const get = (id: string) => menu.find((m) => m.id === id);
   const cartLines = lines.map((l) => { const m = get(l.id); return { price: Number(m?.price ?? 0), qty: l.qty, discount_percent: l.dType === "pct" ? Number(l.dVal ?? 0) : Number(m?.discount_percent ?? 0), discount_amount: l.dType === "amt" ? Number(l.dVal ?? 0) : null, tax_percent: m?.tax_percent ?? null }; });

@@ -6,7 +6,7 @@ import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarHeader, SidebarInset,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Contact, Sparkles, LayoutDashboard, ShoppingCart, ShoppingBag, Receipt, Landmark, FileBarChart, Settings, LogOut, Store, HandCoins, ArrowLeftRight, History, Users, ChartColumn, MonitorSmartphone, Boxes, Lightbulb } from "lucide-react";
+import { Contact, Sparkles, LayoutDashboard, ShoppingCart, ShoppingBag, Receipt, Landmark, FileBarChart, Settings, LogOut, Store, HandCoins, ArrowLeftRight, History, Users, ChartColumn, MonitorSmartphone, Boxes, Lightbulb, Tags } from "lucide-react";
 import { CASHIER_PAGES, useRestaurant, useRole } from "@/lib/data";
 
 export const Route = createFileRoute("/_authenticated/_app")({
@@ -26,6 +26,7 @@ const nav = [
   { to: "/assistant", label: "AI Assistant", icon: Sparkles },
   { to: "/insights", label: "AI Insights", icon: Lightbulb },
   { to: "/sales", label: "Sales", icon: ShoppingCart },
+  { to: "/categories", label: "Categories", icon: Tags },
   { to: "/menu", label: "Products", icon: ShoppingBag },
   { to: "/inventory", label: "Inventory", icon: Boxes },
   { to: "/expenses", label: "Expenses", icon: Receipt },

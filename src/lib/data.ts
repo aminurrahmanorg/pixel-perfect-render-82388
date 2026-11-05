@@ -5,6 +5,7 @@ import type { Tables } from "@/integrations/supabase/types";
 export type Restaurant = Tables<"restaurants">;
 export type Account = Tables<"accounts">;
 export type MenuItem = Tables<"menu_items">;
+export type ProductCategory = Tables<"product_categories">;
 export type Sale = Tables<"sales">;
 export type SaleItem = Tables<"sale_items">;
 export type Expense = Tables<"expenses">;
@@ -15,7 +16,7 @@ export type Staff = Tables<"staff">;
 export type Customer = Tables<"customers">;
 export type CustomerPayment = Tables<"customer_payments">;
 
-type TableName = "accounts" | "menu_items" | "sales" | "sale_items" | "expenses" | "income" | "transfers" | "staff" | "customers" | "customer_payments" | "stock_moves" | "sale_returns";
+type TableName = "accounts" | "menu_items" | "product_categories" | "sales" | "sale_items" | "expenses" | "income" | "transfers" | "staff" | "customers" | "customer_payments" | "stock_moves" | "sale_returns";
 
 /** Pages through results so totals stay correct beyond the 1000-row API limit. */
 export async function fetchAll<T>(table: TableName, order: string): Promise<T[]> {
@@ -53,6 +54,8 @@ export const useRole = () =>
 export const CASHIER_PAGES = ["/pos", "/sales", "/customers", "/menu", "/inventory"];
 export const useMenuItems = () =>
   useQuery({ queryKey: ["menu_items"], queryFn: () => fetchAll<MenuItem>("menu_items", "created_at") });
+export const useProductCategories = () =>
+  useQuery({ queryKey: ["product_categories"], queryFn: () => fetchAll<ProductCategory>("product_categories", "name") });
 export const useSales = () =>
   useQuery({ queryKey: ["sales"], queryFn: () => fetchAll<Sale>("sales", "sale_date") });
 export const useSaleItems = () =>
