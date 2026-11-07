@@ -189,7 +189,7 @@ function PosPage() {
   const cart = (
       <div className="flex h-full min-h-0 flex-col overflow-hidden">
         <div className={cn(
-          "min-h-0 shrink-0 overflow-y-auto overscroll-contain pr-1 transition-[flex-basis] duration-300 ease-in-out",
+          "min-h-0 shrink-0 overflow-y-auto overscroll-contain pr-1 transition-[flex-basis] duration-300 ease-in-out [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted-foreground/40 [&::-webkit-scrollbar-track]:bg-transparent",
           lines.length ? "basis-[45%]" : "basis-0",
         )}>
         <div className="space-y-2">
@@ -230,7 +230,7 @@ function PosPage() {
       </div>
       </div>
       <div className={cn(
-        "flex min-h-0 shrink-0 flex-col overflow-y-auto overscroll-contain border-t pt-2 transition-[flex-basis] duration-300 ease-in-out",
+        "flex min-h-0 shrink-0 flex-col overflow-y-auto overscroll-contain border-t pt-2 transition-[flex-basis] duration-300 ease-in-out [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted-foreground/40 [&::-webkit-scrollbar-track]:bg-transparent",
         lines.length ? "basis-[55%]" : "basis-full",
         lines.length ? "justify-start" : "justify-end",
       )}>
@@ -310,12 +310,12 @@ function PosPage() {
             <Input className="pl-9" placeholder="Search or scan barcode" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") scan(); }} autoFocus />
           </div>
         </div>
-        <div className="-mx-1 mb-4 flex gap-2 overflow-x-auto px-1 pb-1">
+        <div className="-mx-1 mb-4 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted-foreground/40 [&::-webkit-scrollbar-track]:bg-transparent">
           {cats.map((c) => (
             <button key={c} onClick={() => setCat(c)} className={cn("shrink-0 rounded-full border px-4 py-1.5 text-sm font-medium transition-colors", cat === c ? "border-primary bg-primary text-primary-foreground" : "bg-card hover:bg-secondary")}>{c}</button>
           ))}
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto pb-24 lg:pb-0">
+        <div className="min-h-0 flex-1 overflow-y-auto pb-24 lg:pb-0 [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted-foreground/40 [&::-webkit-scrollbar-track]:bg-transparent">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
             {shown.map((m) => {
               const inCart = lines.find((l) => l.id === m.id)?.qty;
