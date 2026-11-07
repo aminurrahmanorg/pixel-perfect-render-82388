@@ -6,6 +6,25 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
+export type DashboardSummary = {
+  todaySales: number
+  todayExp: number
+  todayProfit: number
+  todayOrders: number
+  cash: number
+  bank: number
+  wallet: number
+  total: number
+  dues: number
+  lowStock: number
+  todayReturns: number
+  cur: { sales: number; cost: number; exp: number; inc: number; orders: number }
+  prev: { sales: number; cost: number; exp: number; inc: number }
+  chart: { day: string; Sales: number; Costs: number; Profit: number }[]
+  cats: { name: string; value: number }[]
+  top: { name: string; qty: number; rev: number; profit: number }[]
+}
+
 export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
@@ -821,6 +840,10 @@ export type Database = {
       add_store_member_by_email: { Args: { p_email: string }; Returns: string }
       current_store_owner: { Args: never; Returns: string }
       current_store_role: { Args: never; Returns: string }
+      dashboard_summary: {
+        Args: { p_from: string; p_to: string; p_today: string }
+        Returns: DashboardSummary
+      }
       delete_product_category: {
         Args: { p_id: string; p_replacement_id?: string | null }
         Returns: undefined

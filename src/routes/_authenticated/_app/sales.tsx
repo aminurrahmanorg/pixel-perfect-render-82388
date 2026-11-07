@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader, Panel } from "@/components/PageHeader";
+import { DatePickerField } from "@/components/DatePickerField";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -165,7 +166,7 @@ function NewSale() {
             </div>
           )}
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5"><Label>Date</Label><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></div>
+            <DatePickerField label="Date" value={date} onChange={setDate} />
             <div className="space-y-1.5"><Label>Paid to</Label>
               <Select value={account} onValueChange={setAccount}>
                 <SelectTrigger><SelectValue placeholder="Account" /></SelectTrigger>

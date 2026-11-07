@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader, Panel } from "@/components/PageHeader";
+import { DatePickerField } from "@/components/DatePickerField";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -83,7 +84,7 @@ function NewIncome() {
           setOpen(false); refresh();
         }}>
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5"><Label>Date</Label><Input type="date" value={v.income_date} onChange={(e) => setV({ ...v, income_date: e.target.value })} /></div>
+            <DatePickerField label="Date" value={v.income_date} onChange={(income_date) => setV({ ...v, income_date })} />
             <div className="space-y-1.5"><Label>Amount</Label><Input type="number" step="0.01" value={v.amount} onChange={(e) => setV({ ...v, amount: Number(e.target.value) })} /></div>
             <div className="space-y-1.5"><Label>Source</Label>
               <Select value={v.source} onValueChange={(x) => setV({ ...v, source: x })}>

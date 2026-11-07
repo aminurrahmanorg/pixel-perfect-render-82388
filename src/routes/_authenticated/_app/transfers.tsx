@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader, Panel } from "@/components/PageHeader";
+import { DatePickerField } from "@/components/DatePickerField";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -100,7 +101,7 @@ function NewTransfer() {
                 </Select>
               </div>
             ))}
-            <div className="space-y-1.5"><Label>Date</Label><Input type="date" value={v.transfer_date} onChange={(e) => setV({ ...v, transfer_date: e.target.value })} /></div>
+            <DatePickerField label="Date" value={v.transfer_date} onChange={(transfer_date) => setV({ ...v, transfer_date })} />
             <div className="space-y-1.5"><Label>Amount</Label><Input type="number" step="0.01" value={v.amount} onChange={(e) => setV({ ...v, amount: Number(e.target.value) })} /></div>
           </div>
           <div className="space-y-1.5"><Label>Note</Label><Input value={v.note} onChange={(e) => setV({ ...v, note: e.target.value })} /></div>

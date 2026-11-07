@@ -3,6 +3,7 @@ import { useState } from "react";
 import { format, parseISO } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader, Panel, Stat } from "@/components/PageHeader";
+import { DatePickerField } from "@/components/DatePickerField";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -140,7 +141,7 @@ function PayDialog({ staff, month, amount }: { staff: Staff; month: string; amou
           <p className="text-sm text-muted-foreground">Salary month: <b>{monthLabel(month)}</b> · remaining {amount.toFixed(2)}</p>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5"><Label>Amount</Label><Input type="number" step="0.01" min="0" value={v.amount} onChange={(e) => setV({ ...v, amount: Number(e.target.value) })} /></div>
-            <div className="space-y-1.5"><Label>Payment date</Label><Input type="date" value={v.date} onChange={(e) => setV({ ...v, date: e.target.value })} /></div>
+            <DatePickerField label="Payment date" value={v.date} onChange={(date) => setV({ ...v, date })} />
             <div className="col-span-2 space-y-1.5"><Label>Paid from</Label>
               <Select value={v.account} onValueChange={(c) => setV({ ...v, account: c })}>
                 <SelectTrigger><SelectValue placeholder="Account" /></SelectTrigger>
@@ -194,7 +195,7 @@ function StaffDialog({ initial }: { initial?: Staff }) {
             <div className="space-y-1.5"><Label>Phone</Label><Input value={v.phone} onChange={(e) => setV({ ...v, phone: e.target.value })} /></div>
             <div className="space-y-1.5"><Label>Monthly salary</Label><Input type="number" step="0.01" min="0" value={v.salary} onChange={(e) => setV({ ...v, salary: Number(e.target.value) })} /></div>
             <div className="space-y-1.5"><Label>Sales commission %</Label><Input type="number" step="0.01" min="0" max="100" value={v.commission_percent} onChange={(e) => setV({ ...v, commission_percent: Number(e.target.value) })} /></div>
-            <div className="space-y-1.5"><Label>Hire date</Label><Input type="date" value={v.hire_date} onChange={(e) => setV({ ...v, hire_date: e.target.value })} /></div>
+            <DatePickerField label="Hire date" value={v.hire_date} onChange={(hire_date) => setV({ ...v, hire_date })} />
             <div className="space-y-1.5"><Label>Status</Label>
               <Select value={v.active ? "active" : "inactive"} onValueChange={(c) => setV({ ...v, active: c === "active" })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>

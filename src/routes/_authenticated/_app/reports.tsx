@@ -1,8 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { PageHeader, Panel } from "@/components/PageHeader";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Panel } from "@/components/PageHeader";
+import { DatePickerField } from "@/components/DatePickerField";
 import { DetailReports } from "@/components/DetailReports";
 import { r2, sum, todayIn, useExpenses, useIncome, useMoney, useRestaurant, useSaleItems, useSales } from "@/lib/data";
 
@@ -80,10 +79,15 @@ function ReportsPage() {
 
   return (
     <div>
-      <PageHeader title="Reports" subtitle="Pick any date range" />
-      <div className="mb-6 flex flex-wrap items-end gap-3">
-        <div className="space-y-1.5"><Label>From</Label><Input type="date" value={from} max={to} onChange={(e) => setFrom(e.target.value)} className="w-44" /></div>
-        <div className="space-y-1.5"><Label>To</Label><Input type="date" value={to} min={from} onChange={(e) => setTo(e.target.value)} className="w-44" /></div>
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold md:text-3xl">Reports</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Pick any date range</p>
+        </div>
+        <div className="grid w-full grid-cols-2 gap-3 sm:w-auto">
+          <DatePickerField label="From" value={from} max={to} onChange={setFrom} />
+          <DatePickerField label="To" value={to} min={from} onChange={setTo} />
+        </div>
       </div>
 
       <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">

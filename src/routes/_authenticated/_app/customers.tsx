@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader, Panel, Stat } from "@/components/PageHeader";
+import { DatePickerField } from "@/components/DatePickerField";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -180,7 +181,7 @@ function PayDialog({ customer, onClose, due, accounts, today }: { customer: Cust
         <p className="text-sm text-muted-foreground">Current due: <span className="num font-semibold text-foreground">{money(due)}</span></p>
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1"><Label>Amount</Label><Input type="number" min={0} step="0.01" value={amount} onChange={(e) => setAmount(Number(e.target.value))} /></div>
-          <div className="space-y-1"><Label>Date</Label><Input type="date" value={date || today} onChange={(e) => setDate(e.target.value)} /></div>
+          <DatePickerField label="Date" value={date || today} onChange={setDate} />
           <div className="space-y-1 sm:col-span-2"><Label>Received into</Label>
             <Select value={account} onValueChange={setAccount}><SelectTrigger><SelectValue placeholder="Account" /></SelectTrigger><SelectContent>{accounts.map((a) => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}</SelectContent></Select>
           </div>

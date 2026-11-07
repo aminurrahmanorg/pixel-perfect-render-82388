@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { Tables } from "@/integrations/supabase/types";
+import type { DashboardSummary, Tables } from "@/integrations/supabase/types";
 
 export type Restaurant = Tables<"restaurants">;
 export type Account = Tables<"accounts">;
@@ -19,13 +19,13 @@ export type CustomerPayment = Tables<"customer_payments">;
 type TableName = "accounts" | "menu_items" | "product_categories" | "sales" | "sale_items" | "expenses" | "income" | "transfers" | "staff" | "customers" | "customer_payments" | "stock_moves" | "sale_returns";
 
 /** Pages through results so totals stay correct beyond the 1000-row API limit. */
-export async function fetchAll<T>(table: TableName, order: string): Promise<T[]> {
+export async function fetchAll<T>(table: TableName, order: string, columns = "*"): Promise<T[]> {
   const out: T[] = [];
   const size = 1000;
   for (let from = 0; ; from += size) {
     const { data, error } = await supabase
       .from(table)
-      .select("*")
+      .select(columns)
       .order(order, { ascending: false })
       .range(from, from + size - 1);
     if (error) throw error;
@@ -45,10 +45,121 @@ export const useRestaurant = () =>
     },
   });
 
+export const useDashboardSummary = (from: string, to: string, today: string) =>
+  useQuery({
+    queryKey: ["dashboard_summary", from, to, today],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("dashboard_summary", {
+        p_from: from,
+        p_to: to,
+        p_today: today,
+      });
+      if (error) throw error;
+      return data as DashboardSummary;
+    },
+  });
+
 export const useAccounts = () =>
   useQuery({ queryKey: ["accounts"], queryFn: () => fetchAll<Account>("accounts", "created_at") });
 export const useSaleReturns = () =>
   useQuery({ queryKey: ["sale_returns"], queryFn: () => fetchAll<Tables<"sale_returns">>("sale_returns", "return_date") });
+export const useDashboardAccounts = () =>
+  useQuery({
+    queryKey: ["dashboard", "accounts"],
+    queryFn: () => fetchAll<Pick<Account, "id" | "type" | "opening_balance">>("accounts", "created_at", "id,type,opening_balance"),
+  });
+export const useDashboardSales = () =>
+  useQuery({
+    queryKey: ["dashboard", "sales"],
+    queryFn: () =>
+      fetchAll<Pick<Sale, "id" | "sale_date" | "total" | "tax" | "cost_total" | "account_id" | "paid_amount">>(
+        "sales",
+        "sale_date",
+        "id,sale_date,total,tax,cost_total,account_id,paid_amount",
+      ),
+  });
+export const useDashboardExpenses = () =>
+  useQuery({
+    queryKey: ["dashboard", "expenses"],
+    queryFn: () =>
+      fetchAll<Pick<Expense, "expense_date" | "amount" | "category" | "account_id">>(
+        "expenses",
+        "expense_date",
+        "expense_date,amount,category,account_id",
+      ),
+  });
+export const useDashboardIncome = () =>
+  useQuery({
+    queryKey: ["dashboard", "income"],
+    queryFn: () =>
+      fetchAll<Pick<Income, "income_date" | "amount" | "account_id">>(
+        "income",
+        "income_date",
+        "income_date,amount,account_id",
+      ),
+  });
+export const useDashboardTransfers = () =>
+  useQuery({
+    queryKey: ["dashboard", "transfers"],
+    queryFn: () =>
+      fetchAll<Pick<Transfer, "from_account_id" | "to_account_id" | "amount">>(
+        "transfers",
+        "transfer_date",
+        "from_account_id,to_account_id,amount",
+      ),
+  });
+export const useDashboardCustomerPayments = () =>
+  useQuery({
+    queryKey: ["dashboard", "customer_payments"],
+    queryFn: () =>
+      fetchAll<Pick<CustomerPayment, "account_id" | "amount">>(
+        "customer_payments",
+        "payment_date",
+        "account_id,amount",
+      ),
+  });
+export const useDashboardMenuItems = () =>
+  useQuery({
+    queryKey: ["dashboard", "menu_items"],
+    queryFn: () =>
+      fetchAll<Pick<MenuItem, "track_stock" | "stock_qty" | "low_stock_at">>(
+        "menu_items",
+        "created_at",
+        "track_stock,stock_qty,low_stock_at",
+      ),
+  });
+export const useDashboardSaleReturns = () =>
+  useQuery({
+    queryKey: ["dashboard", "sale_returns"],
+    queryFn: () =>
+      fetchAll<Pick<Tables<"sale_returns">, "return_date" | "refund">>(
+        "sale_returns",
+        "return_date",
+        "return_date,refund",
+      ),
+  });
+export const useDashboardSaleItems = (saleIds: string[]) =>
+  useQuery({
+    queryKey: ["dashboard", "sale_items", saleIds],
+    queryFn: async () => {
+      const out: Pick<SaleItem, "sale_id" | "name" | "qty" | "price" | "cost">[] = [];
+      for (let start = 0; start < saleIds.length; start += 100) {
+        const batch = saleIds.slice(start, start + 100);
+        for (let offset = 0; ; offset += 1000) {
+          const { data, error } = await supabase
+            .from("sale_items")
+            .select("sale_id,name,qty,price,cost")
+            .in("sale_id", batch)
+            .order("id", { ascending: false })
+            .range(offset, offset + 999);
+          if (error) throw error;
+          out.push(...(data ?? []));
+          if (!data || data.length < 1000) break;
+        }
+      }
+      return out;
+    },
+  });
 export const useRole = () =>
   useQuery({ queryKey: ["role"], queryFn: async () => ((await supabase.rpc("current_store_role")).data ?? "owner") as "owner" | "manager" | "cashier" });
 export const CASHIER_PAGES = ["/pos", "/sales", "/customers", "/menu", "/inventory"];
@@ -135,7 +246,14 @@ export function todayIn(tz?: string | null) {
 }
 
 /** Balance = opening + sales received + other income + transfers in − expenses paid − transfers out. */
-export function accountBalances(accounts: Account[], sales: Sale[], expenses: Expense[], income: Income[] = [], transfers: Transfer[] = [], payments: { account_id: string | null; amount: number }[] = []) {
+export function accountBalances(
+  accounts: Pick<Account, "id" | "opening_balance">[],
+  sales: Pick<Sale, "account_id" | "paid_amount" | "total">[],
+  expenses: Pick<Expense, "account_id" | "amount">[],
+  income: Pick<Income, "account_id" | "amount">[] = [],
+  transfers: Pick<Transfer, "from_account_id" | "to_account_id" | "amount">[] = [],
+  payments: Pick<CustomerPayment, "account_id" | "amount">[] = [],
+) {
   const map = new Map<string, number>();
   accounts.forEach((a) => map.set(a.id, Number(a.opening_balance)));
   const add = (id: string | null, v: number) => { if (id && map.has(id)) map.set(id, map.get(id)! + v); };
