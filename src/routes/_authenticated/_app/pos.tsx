@@ -12,7 +12,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { r2, todayIn, useAccounts, useCustomerPayments, useCustomers, useMenuItems, useMoney, useProductCategories, useRefresh, useRestaurant, useSales, useStaff, type MenuItem } from "@/lib/data";
 import { calcCart } from "@/lib/pricing";
 import { customerDue, earnPoints, redeemValue } from "@/lib/customers";
-import { Minus, Plus, Search, ShoppingBag, ShoppingCart, Trash2, UserRound } from "lucide-react";
+import { Minus, Plus, Search, ShoppingBag, ShoppingCart, Trash2, UserRound, X } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -91,7 +91,8 @@ function PosPage() {
     const ex = ls.find((l) => l.id === m.id);
     return ex ? ls.map((l) => (l.id === m.id ? { ...l, qty: l.qty + 1 } : l)) : [...ls, { id: m.id, qty: 1 }];
   });
-  const setQty = (id: string, qty: number) => setLines((ls) => (qty <= 0 ? ls.filter((l) => l.id !== id) : ls.map((l) => (l.id === id ? { ...l, qty } : l))));
+  const setQty = (id: string, qty: number) => setLines((ls) => ls.map((l) => (l.id === id ? { ...l, qty: Math.max(1, qty) } : l)));
+  const removeLine = (id: string) => setLines((ls) => ls.filter((l) => l.id !== id));
   const clear = () => { setLines([]); setCustomerId("walkin"); setDiscount(0); setPaid(""); setUsePoints(false); };
 
   async function openShift() {
@@ -176,29 +177,34 @@ function PosPage() {
         {lines.map((l) => {
           const m = get(l.id)!;
           return (
-            <div key={l.id} className="flex items-center gap-2 rounded-lg border bg-background p-2">
-              <div className="min-w-0 flex-1">
+            <div key={l.id} className="relative space-y-2 rounded-lg border bg-background p-2.5">
+              <Button size="icon" variant="ghost" className="absolute right-1 top-1 size-7 text-muted-foreground hover:text-destructive" aria-label={`Remove ${m.name}`} onClick={() => removeLine(l.id)}><X className="size-3.5" /></Button>
+              <div className="min-w-0 pr-8">
                 <p className="truncate text-sm font-medium">{m.name}</p>
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="num text-xs text-muted-foreground">{money(Number(m.price))} each</p>
-                <div className="mt-2 flex items-center gap-1.5">
-                  <span className="text-[11px] font-medium text-muted-foreground">Disc.</span>
-                  <div className="flex rounded-full border text-[11px]">
-                    {(["pct", "amt"] as const).map((t) => (
-                      <button key={t} type="button" onClick={() => setDisc(l.id, { dType: t, dVal: l.dType ? (l.dVal ?? 0) : t === "pct" ? Number(m.discount_percent ?? 0) : 0 })}
-                        className={cn("rounded-full px-2 py-0.5", (l.dType ?? "pct") === t && "bg-primary text-primary-foreground")}>{t === "pct" ? "%" : r?.currency_symbol || "Amt"}</button>
-                    ))}
+                <div className="flex shrink-0 items-center gap-2">
+                  <div className="flex items-center rounded-md border">
+                    <Button size="icon" variant="ghost" className="size-8" aria-label="Less" onClick={() => setQty(l.id, l.qty - 1)}><Minus className="size-3" /></Button>
+                    <span className="num w-7 text-center text-sm font-semibold">{l.qty}</span>
+                    <Button size="icon" variant="ghost" className="size-8" aria-label="More" onClick={() => add(m)}><Plus className="size-3" /></Button>
                   </div>
-                  <Input className="h-7 w-16 px-2 text-xs" type="number" min={0} step="0.01" aria-label={`Discount for ${m.name}`}
-                    value={l.dType ? (l.dVal ?? 0) : Number(m.discount_percent ?? 0)}
-                    onChange={(e) => setDisc(l.id, { dType: l.dType ?? "pct", dVal: Math.max(0, Number(e.target.value)) })} />
+                  <span className="num w-20 text-right text-sm font-semibold">{money(lineNet(l))}</span>
                 </div>
               </div>
-              <div className="flex shrink-0 items-center rounded-md border">
-                <Button size="icon" variant="ghost" className="size-8" aria-label="Less" onClick={() => setQty(l.id, l.qty - 1)}><Minus className="size-3" /></Button>
-                <span className="num w-7 text-center text-sm font-semibold">{l.qty}</span>
-                <Button size="icon" variant="ghost" className="size-8" aria-label="More" onClick={() => add(m)}><Plus className="size-3" /></Button>
+              <div className="flex flex-wrap items-center gap-1.5 border-t pt-2">
+                <span className="text-[11px] font-medium text-muted-foreground">Disc.</span>
+                <div className="flex rounded-full border text-[11px]">
+                  {(["pct", "amt"] as const).map((t) => (
+                    <button key={t} type="button" onClick={() => setDisc(l.id, { dType: t, dVal: l.dType ? (l.dVal ?? 0) : t === "pct" ? Number(m.discount_percent ?? 0) : 0 })}
+                      className={cn("rounded-full px-2 py-0.5", (l.dType ?? "pct") === t && "bg-primary text-primary-foreground")}>{t === "pct" ? "%" : r?.currency_symbol || "Amt"}</button>
+                  ))}
+                </div>
+                <Input className="h-7 w-16 px-2 text-xs" type="number" min={0} step="0.01" aria-label={`Discount for ${m.name}`}
+                  value={l.dType ? (l.dVal ?? 0) : Number(m.discount_percent ?? 0)}
+                  onChange={(e) => setDisc(l.id, { dType: l.dType ?? "pct", dVal: Math.max(0, Number(e.target.value)) })} />
               </div>
-              <span className="num w-20 shrink-0 text-right text-sm font-semibold">{money(lineNet(l))}</span>
             </div>
           );
         })}
