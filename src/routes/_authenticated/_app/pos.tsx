@@ -47,6 +47,13 @@ function PosPage() {
   const [discount, setDiscount] = useState(0);
   const [busy, setBusy] = useState(false);
   const [sheet, setSheet] = useState(false);
+  const [openShiftDialog, setOpenShiftDialog] = useState(false);
+  const [openingCash, setOpeningCash] = useState("0");
+  const [openingShift, setOpeningShift] = useState(false);
+  const [closeShiftDialog, setCloseShiftDialog] = useState(false);
+  const [expectedShiftCash, setExpectedShiftCash] = useState(0);
+  const [closingCash, setClosingCash] = useState("0");
+  const [closingShift, setClosingShift] = useState(false);
   const { data: staff = [] } = useStaff();
   const [seller, setSeller] = useState("none");
   const { data: shift, refetch: refetchShift } = useQuery({ queryKey: ["open_shift"], queryFn: async () => (await supabase.from("shifts").select("*").is("closed_at", null).order("opened_at", { ascending: false }).limit(1).maybeSingle()).data });
@@ -96,24 +103,36 @@ function PosPage() {
   const clear = () => { setLines([]); setCustomerId("walkin"); setDiscount(0); setPaid(""); setUsePoints(false); };
 
   async function openShift() {
-    const v = prompt("Opening cash in drawer", "0");
-    if (v === null) return;
-    const { error } = await supabase.from("shifts").insert({ opening_cash: Math.max(0, Number(v) || 0) });
+    const amount = Number(openingCash);
+    if (!Number.isFinite(amount) || amount < 0) return void toast.error("Opening cash must be a valid amount of 0 or more");
+    setOpeningShift(true);
+    const { error } = await supabase.from("shifts").insert({ opening_cash: amount });
+    setOpeningShift(false);
     if (error) return void toast.error(error.message);
+    setOpenShiftDialog(false);
     toast.success("Shift opened"); refetchShift();
   }
   async function closeShift() {
     if (!shift) return;
     const cashIds = accounts.filter((a) => a.type === "cash").map((a) => a.id);
-    const { data: ss } = await supabase.from("sales").select("total,paid_amount,account_id").eq("shift_id", shift.id);
-    const cashIn = (ss ?? []).filter((x) => x.account_id && cashIds.includes(x.account_id)).reduce((a, x) => a + Number(x.paid_amount ?? x.total), 0);
-    const exp = expectedCash(Number(shift.opening_cash), cashIn);
-    const v = prompt(`Expected cash: ${money(exp)}. Count the drawer and enter actual cash:`, String(exp));
-    if (v === null) return;
-    const counted = Number(v) || 0;
-    const { error } = await supabase.from("shifts").update({ closed_at: new Date().toISOString(), expected_cash: exp, closing_cash: counted }).eq("id", shift.id);
+    const { data: ss, error } = await supabase.from("sales").select("total,paid_amount,account_id").eq("shift_id", shift.id);
     if (error) return void toast.error(error.message);
-    const diff = r2(counted - exp);
+    const cashIn = (ss ?? []).filter((x) => x.account_id && cashIds.includes(x.account_id)).reduce((a, x) => a + Number(x.paid_amount ?? x.total), 0);
+    const expected = expectedCash(Number(shift.opening_cash), cashIn);
+    setExpectedShiftCash(expected);
+    setClosingCash(String(expected));
+    setCloseShiftDialog(true);
+  }
+  async function confirmCloseShift() {
+    if (!shift) return;
+    const counted = Number(closingCash);
+    if (!Number.isFinite(counted) || counted < 0) return void toast.error("Counted cash must be a valid amount of 0 or more");
+    setClosingShift(true);
+    const { error } = await supabase.from("shifts").update({ closed_at: new Date().toISOString(), expected_cash: expectedShiftCash, closing_cash: counted }).eq("id", shift.id);
+    setClosingShift(false);
+    if (error) return void toast.error(error.message);
+    setCloseShiftDialog(false);
+    const diff = r2(counted - expectedShiftCash);
     toast.success(diff === 0 ? "Shift closed · cash matches" : `Shift closed · ${diff > 0 ? "over" : "short"} by ${money(Math.abs(diff))}`);
     refetchShift();
   }
@@ -283,7 +302,7 @@ function PosPage() {
             <h1 className="truncate text-2xl font-semibold">Point of Sale</h1>
             <p className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">{active.length} items available
               {shift ? <button className="rounded-full bg-success/15 px-3 py-0.5 text-xs font-semibold text-success" onClick={closeShift}>Shift open · Close</button>
-                : <button className="rounded-full bg-secondary px-3 py-0.5 text-xs font-semibold" onClick={openShift}>Open shift</button>}
+                : <button className="rounded-full bg-secondary border px-4 py-1 text-xs font-semibold" onClick={() => setOpenShiftDialog(true)}>Open shift</button>}
             </p>
           </div>
           <div className="relative">
@@ -348,6 +367,38 @@ function PosPage() {
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => setQuickAddOpen(false)}>Cancel</Button>
               <Button type="submit" disabled={quickAdding}>{quickAdding ? "Adding..." : "Add customer"}</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={openShiftDialog} onOpenChange={setOpenShiftDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Open shift</DialogTitle></DialogHeader>
+          <form className="space-y-4" onSubmit={(event) => { event.preventDefault(); void openShift(); }}>
+            <div className="space-y-2">
+              <Label htmlFor="opening-cash">Opening cash in drawer</Label>
+              <Input id="opening-cash" type="number" min={0} step="0.01" autoFocus value={openingCash} onChange={(event) => setOpeningCash(event.target.value)} />
+              <p className="text-xs text-muted-foreground">Enter the cash available in the drawer at the start of this shift. Use 0 if you do not use a cash drawer.</p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setOpenShiftDialog(false)}>Cancel</Button>
+              <Button type="submit" disabled={openingShift}>{openingShift ? "Opening..." : "Open shift"}</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={closeShiftDialog} onOpenChange={setCloseShiftDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Close shift</DialogTitle></DialogHeader>
+          <form className="space-y-4" onSubmit={(event) => { event.preventDefault(); void confirmCloseShift(); }}>
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">Expected cash: <span className="font-semibold text-foreground">{money(expectedShiftCash)}</span></p>
+              <Label htmlFor="closing-cash">Counted cash in drawer</Label>
+              <Input id="closing-cash" type="number" min={0} step="0.01" autoFocus value={closingCash} onChange={(event) => setClosingCash(event.target.value)} />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setCloseShiftDialog(false)}>Cancel</Button>
+              <Button type="submit" disabled={closingShift}>{closingShift ? "Closing..." : "Close shift"}</Button>
             </div>
           </form>
         </DialogContent>
