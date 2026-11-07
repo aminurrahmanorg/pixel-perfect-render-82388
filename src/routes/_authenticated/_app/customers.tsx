@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ConfirmActionDialog } from "@/components/ConfirmActionDialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CUSTOMER_TIERS, r2, todayIn, useAccounts, useCustomerPayments, useCustomers, useMoney, useRefresh, useRestaurant, useSales, type Customer } from "@/lib/data";
 import { customerDue, saleDue } from "@/lib/customers";
@@ -54,10 +55,10 @@ function CustomersPage() {
     toast.success("Customer saved"); setEdit(null); refresh();
   }
   async function remove(id: string) {
-    if (!confirm("Delete this customer? Their past sales stay.")) return;
     const { error } = await supabase.from("customers").delete().eq("id", id);
-    if (error) return void toast.error(error.message);
+    if (error) { toast.error(error.message); return false; }
     refresh();
+    return true;
   }
 
   return (
@@ -86,7 +87,9 @@ function CustomersPage() {
                     <td className="whitespace-nowrap text-right">
                       {due > 0 && <Button size="sm" variant="outline" onClick={() => setPay(c)}>Collect</Button>}
                       <Button size="icon" variant="ghost" aria-label="Edit" onClick={() => setEdit({ id: c.id, name: c.name, phone: c.phone ?? "", email: c.email ?? "", address: c.address ?? "", tier: c.tier, credit_limit: Number(c.credit_limit), points: Number(c.points) })}><Pencil /></Button>
-                      <Button size="icon" variant="ghost" aria-label="Delete" onClick={() => remove(c.id)}><Trash2 /></Button>
+                      <ConfirmActionDialog title="Delete this customer?" description="Their past sales will stay." actionLabel="Delete customer" onConfirm={() => remove(c.id)}>
+                        <Button size="icon" variant="ghost" aria-label="Delete"><Trash2 /></Button>
+                      </ConfirmActionDialog>
                     </td>
                   </tr>
                 ))}

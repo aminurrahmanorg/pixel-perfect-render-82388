@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ConfirmActionDialog } from "@/components/ConfirmActionDialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { accountBalances, todayIn, useAccounts, useExpenses, useIncome, useMoney, useRefresh, useRestaurant, useSales, useTransfers, useCustomerPayments } from "@/lib/data";
 import { ArrowRight, Plus, Trash2 } from "lucide-react";
@@ -22,6 +23,12 @@ function TransfersPage() {
   const money = useMoney();
   const refresh = useRefresh();
   const name = (id: string) => accounts.find((a) => a.id === id)?.name ?? "—";
+  async function deleteTransfer(id: string) {
+    const { error } = await supabase.from("transfers").delete().eq("id", id);
+    if (error) { toast.error(error.message); return false; }
+    refresh();
+    return true;
+  }
   return (
     <div>
       <PageHeader title="Transfers" subtitle="Move money between cash, bank and wallet" action={<NewTransfer />} />
@@ -39,11 +46,9 @@ function TransfersPage() {
                   <td className="py-2 text-muted-foreground">{t.note}</td>
                   <td className="py-2 text-right font-medium">{money(Number(t.amount))}</td>
                   <td className="py-2 text-right">
-                    <Button size="icon" variant="ghost" aria-label="Delete" onClick={async () => {
-                      if (!confirm("Delete this transfer?")) return;
-                      const { error } = await supabase.from("transfers").delete().eq("id", t.id);
-                      if (error) toast.error(error.message); else refresh();
-                    }}><Trash2 className="size-4" /></Button>
+                    <ConfirmActionDialog title="Delete this transfer?" description="This action cannot be undone." actionLabel="Delete transfer" onConfirm={() => deleteTransfer(t.id)}>
+                      <Button size="icon" variant="ghost" aria-label="Delete transfer"><Trash2 className="size-4" /></Button>
+                    </ConfirmActionDialog>
                   </td>
                 </tr>
               ))}

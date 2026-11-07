@@ -54,6 +54,9 @@ function PosPage() {
   const [expectedShiftCash, setExpectedShiftCash] = useState(0);
   const [closingCash, setClosingCash] = useState("0");
   const [closingShift, setClosingShift] = useState(false);
+  const [managerPinDialog, setManagerPinDialog] = useState(false);
+  const [managerPin, setManagerPin] = useState("");
+  const [managerPinPrint, setManagerPinPrint] = useState(false);
   const { data: staff = [] } = useStaff();
   const [seller, setSeller] = useState("none");
   const { data: shift, refetch: refetchShift } = useQuery({ queryKey: ["open_shift"], queryFn: async () => (await supabase.from("shifts").select("*").is("closed_at", null).order("opened_at", { ascending: false }).limit(1).maybeSingle()).data });
@@ -152,7 +155,7 @@ function PosPage() {
     }
   }
 
-  async function charge(print: boolean) {
+  async function charge(print: boolean, managerApproved = false) {
     if (lines.length === 0) return void toast.error("Add at least one item");
     if (discount < 0 || discount > subtotal - itemDiscount) return void toast.error("Discount must be between 0 and the subtotal");
     if (due > 0 && !cust) return void toast.error("Select a customer to sell on due");
@@ -160,9 +163,11 @@ function PosPage() {
     if (cust && due > 0 && Number(cust.credit_limit) > 0 && prevDue + due > Number(cust.credit_limit))
       return void toast.error(`Credit limit exceeded (${money(Number(cust.credit_limit))})`);
     const base = subtotal - itemDiscount;
-    if (r?.manager_pin && base > 0 && (discount / base) * 100 > Number(r.max_discount_percent ?? 0)) {
-      const pin = prompt(`Discount above ${Number(r.max_discount_percent)}% needs the manager PIN`);
-      if (pin !== r.manager_pin) return void toast.error("Wrong manager PIN");
+    if (!managerApproved && r?.manager_pin && base > 0 && (discount / base) * 100 > Number(r.max_discount_percent ?? 0)) {
+      setManagerPin("");
+      setManagerPinPrint(print);
+      setManagerPinDialog(true);
+      return;
     }
     setBusy(true);
     const cost = r2(lines.reduce((a, l) => a + l.qty * Number(get(l.id)?.cost ?? 0), 0));
@@ -399,6 +404,28 @@ function PosPage() {
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => setCloseShiftDialog(false)}>Cancel</Button>
               <Button type="submit" disabled={closingShift}>{closingShift ? "Closing..." : "Close shift"}</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={managerPinDialog} onOpenChange={setManagerPinDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Manager approval required</DialogTitle></DialogHeader>
+          <form className="space-y-4" onSubmit={(event) => {
+            event.preventDefault();
+            if (managerPin !== r?.manager_pin) return void toast.error("Wrong manager PIN");
+            const print = managerPinPrint;
+            setManagerPinDialog(false);
+            setManagerPin("");
+            void charge(print, true);
+          }}>
+            <div className="space-y-2">
+              <Label htmlFor="manager-pin">Discount above {Number(r?.max_discount_percent)}% needs manager PIN</Label>
+              <Input id="manager-pin" type="password" autoFocus value={managerPin} onChange={(event) => setManagerPin(event.target.value)} />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setManagerPinDialog(false)}>Cancel</Button>
+              <Button type="submit">Approve discount</Button>
             </div>
           </form>
         </DialogContent>

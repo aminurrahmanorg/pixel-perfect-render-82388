@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ConfirmActionDialog } from "@/components/ConfirmActionDialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { accountBalances, useAccounts, useExpenses, useIncome, useMoney, useRefresh, useSales, useTransfers, useCustomerPayments } from "@/lib/data";
 import { Banknote, Landmark, Plus, Smartphone, Trash2 } from "lucide-react";
@@ -29,6 +30,12 @@ function AccountsPage() {
   const { data: custPayments = [] } = useCustomerPayments();
   const bal = accountBalances(accounts, sales, expenses, income, transfers, custPayments);
   const total = [...bal.values()].reduce((a, b) => a + b, 0);
+  async function deleteAccount(id: string) {
+    const { error } = await supabase.from("accounts").delete().eq("id", id);
+    if (error) { toast.error(error.message); return false; }
+    refresh();
+    return true;
+  }
   return (
     <div>
       <PageHeader title="Accounts" subtitle="Cash, bank and mobile wallet balances" action={<NewAccount />} />
@@ -44,11 +51,9 @@ function AccountsPage() {
             <div key={a.id} className="rounded-xl border bg-card p-5 shadow-card">
               <div className="flex items-start justify-between">
                 <span className="grid size-10 place-items-center rounded-lg bg-secondary text-primary"><Icon className="size-5" /></span>
-                <Button size="icon" variant="ghost" aria-label="Delete" onClick={async () => {
-                  if (!confirm(`Delete ${a.name}? Linked sales and expenses will keep their amounts but lose this account.`)) return;
-                  const { error } = await supabase.from("accounts").delete().eq("id", a.id);
-                  if (error) toast.error(error.message); else refresh();
-                }}><Trash2 className="size-4" /></Button>
+                <ConfirmActionDialog title={`Delete ${a.name}?`} description="Linked sales and expenses will keep their amounts but lose this account." actionLabel="Delete account" onConfirm={() => deleteAccount(a.id)}>
+                  <Button size="icon" variant="ghost" aria-label={`Delete ${a.name}`}><Trash2 className="size-4" /></Button>
+                </ConfirmActionDialog>
               </div>
               <p className="mt-4 font-medium">{a.name}</p>
               <p className="text-xs capitalize text-muted-foreground">{a.type === "wallet" ? "Mobile wallet" : a.type}</p>

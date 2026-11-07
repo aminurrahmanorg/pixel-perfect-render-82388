@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ConfirmActionDialog } from "@/components/ConfirmActionDialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { STAFF_ROLES, r2, sum, todayIn, useAccounts, useExpenses, useMoney, useRefresh, useRestaurant, useStaff, useSales, type Staff } from "@/lib/data";
 import { Banknote, CheckCircle2, Clock, Pencil, Plus, Trash2, Users, Wallet } from "lucide-react";
@@ -38,6 +39,12 @@ function StaffPage() {
   const paidFor = (id: string) => sum(payments.filter((e) => e.staff_id === id && (e.description ?? "").includes(tag)), (e) => Number(e.amount));
   const paidTotal = r2(sum(active, (s) => paidFor(s.id)));
   const due = r2(Math.max(0, sum(active, (s) => Math.max(0, Number(s.salary) - paidFor(s.id)))));
+  async function removeStaff(id: string) {
+    const { error } = await supabase.from("staff").delete().eq("id", id);
+    if (error) { toast.error(error.message); return false; }
+    refresh();
+    return true;
+  }
   return (
     <div>
       <PageHeader title="Staff & Salaries" subtitle={`${active.length} active team members`} action={<StaffDialog />} />
@@ -74,11 +81,9 @@ function StaffPage() {
                   <td className="py-2 text-right whitespace-nowrap">
                     {left > 0 && s.active && <PayDialog staff={s} month={view} amount={left} />}
                     <StaffDialog initial={s} />
-                    <Button size="icon" variant="ghost" aria-label="Delete" onClick={async () => {
-                      if (!confirm(`Remove ${s.name}?`)) return;
-                      const { error } = await supabase.from("staff").delete().eq("id", s.id);
-                      if (error) toast.error(error.message); else refresh();
-                    }}><Trash2 className="size-4" /></Button>
+                    <ConfirmActionDialog title={`Remove ${s.name}?`} description="This action cannot be undone." actionLabel="Remove staff member" pendingLabel="Removing..." onConfirm={() => removeStaff(s.id)}>
+                      <Button size="icon" variant="ghost" aria-label={`Remove ${s.name}`}><Trash2 className="size-4" /></Button>
+                    </ConfirmActionDialog>
                   </td>
                 </tr>
               ); })}

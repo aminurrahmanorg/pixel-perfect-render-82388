@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ConfirmActionDialog } from "@/components/ConfirmActionDialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { INCOME_SOURCES, sum, todayIn, useAccounts, useIncome, useMoney, useRefresh, useRestaurant } from "@/lib/data";
 import { Plus, Trash2 } from "lucide-react";
@@ -21,6 +22,12 @@ function IncomePage() {
   const { data: accounts = [] } = useAccounts();
   const money = useMoney();
   const refresh = useRefresh();
+  async function deleteIncome(id: string) {
+    const { error } = await supabase.from("income").delete().eq("id", id);
+    if (error) { toast.error(error.message); return false; }
+    refresh();
+    return true;
+  }
   return (
     <div>
       <PageHeader title="Other income" subtitle={`Catering, events, commissions · Total ${money(sum(income, (i) => Number(i.amount)))}`} action={<NewIncome />} />
@@ -39,11 +46,9 @@ function IncomePage() {
                   <td className="py-2">{accounts.find((a) => a.id === i.account_id)?.name ?? "—"}</td>
                   <td className="py-2 text-right font-medium text-success">{money(Number(i.amount))}</td>
                   <td className="py-2 text-right">
-                    <Button size="icon" variant="ghost" aria-label="Delete" onClick={async () => {
-                      if (!confirm("Delete this income?")) return;
-                      const { error } = await supabase.from("income").delete().eq("id", i.id);
-                      if (error) toast.error(error.message); else refresh();
-                    }}><Trash2 className="size-4" /></Button>
+                    <ConfirmActionDialog title="Delete this income?" description="This action cannot be undone." actionLabel="Delete income" onConfirm={() => deleteIncome(i.id)}>
+                      <Button size="icon" variant="ghost" aria-label="Delete income"><Trash2 className="size-4" /></Button>
+                    </ConfirmActionDialog>
                   </td>
                 </tr>
               ))}

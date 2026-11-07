@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ConfirmActionDialog } from "@/components/ConfirmActionDialog";
 import { useMenuItems, useMoney, useProductCategories, useRefresh, type MenuItem } from "@/lib/data";
 import { Loader2, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -25,6 +26,12 @@ function MenuPage() {
   const { data: categories = [] } = useProductCategories();
   const money = useMoney();
   const refresh = useRefresh();
+  async function deleteProduct(id: string) {
+    const { error } = await supabase.from("menu_items").delete().eq("id", id);
+    if (error) { toast.error(error.message); return false; }
+    refresh();
+    return true;
+  }
   return (
     <div>
       <PageHeader title="Products" subtitle="Selling price, cost and margin for each product" action={<div className="flex gap-2"><Button asChild variant="outline"><Link to="/categories">Manage categories</Link></Button><ItemDialog /></div>} />
@@ -51,11 +58,9 @@ function MenuPage() {
                     <td className="py-2">{m.active ? "Active" : "Hidden"}</td>
                     <td className="py-2 text-right whitespace-nowrap">
                       <ItemDialog item={m} />
-                      <Button size="icon" variant="ghost" aria-label="Delete" onClick={async () => {
-                        if (!confirm(`Delete ${m.name}?`)) return;
-                        const { error } = await supabase.from("menu_items").delete().eq("id", m.id);
-                        if (error) toast.error(error.message); else refresh();
-                      }}><Trash2 className="size-4" /></Button>
+                      <ConfirmActionDialog title={`Delete ${m.name}?`} description="This action cannot be undone." actionLabel="Delete product" onConfirm={() => deleteProduct(m.id)}>
+                        <Button size="icon" variant="ghost" aria-label={`Delete ${m.name}`}><Trash2 className="size-4" /></Button>
+                      </ConfirmActionDialog>
                     </td>
                   </tr>
                 );
