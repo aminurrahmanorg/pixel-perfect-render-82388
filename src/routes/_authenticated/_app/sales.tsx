@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { calcTax, r2, todayIn, useAccounts, useMenuItems, useMoney, useRefresh, useRestaurant, useSales } from "@/lib/data";
 import { ReturnDialog } from "@/components/ReturnDialog";
@@ -23,8 +24,19 @@ function SalesPage() {
   const money = useMoney();
   const refresh = useRefresh();
   const [q, setQ] = useState("");
+  const [deleteSaleId, setDeleteSaleId] = useState<string | null>(null);
+  const [deletingSale, setDeletingSale] = useState(false);
   const acc = (id: string | null) => accounts.find((a) => a.id === id)?.name ?? "—";
   const list = sales.filter((s) => !q || s.sale_date.includes(q) || (s.customer ?? "").toLowerCase().includes(q.toLowerCase()));
+
+  async function deleteSale(id: string) {
+    setDeletingSale(true);
+    const { error } = await supabase.from("sales").delete().eq("id", id);
+    setDeletingSale(false);
+    if (error) return void toast.error(error.message);
+    setDeleteSaleId(null);
+    refresh();
+  }
 
   return (
     <div>
@@ -48,11 +60,19 @@ function SalesPage() {
                     <Button asChild size="icon" variant="ghost" aria-label="Print receipt"><Link to="/print/$saleId" params={{ saleId: s.id }} search={{ type: "receipt" }} target="_blank"><Printer className="size-4" /></Link></Button>
                     <Button asChild size="icon" variant="ghost" aria-label="Print invoice"><Link to="/print/$saleId" params={{ saleId: s.id }} search={{ type: "invoice" }} target="_blank"><FileText className="size-4" /></Link></Button>
                     <ReturnDialog sale={s} />
-                    <Button size="icon" variant="ghost" aria-label="Delete sale" onClick={async () => {
-                      if (!confirm("Delete this sale?")) return;
-                      const { error } = await supabase.from("sales").delete().eq("id", s.id);
-                      if (error) toast.error(error.message); else refresh();
-                    }}><Trash2 className="size-4" /></Button>
+                    <Button size="icon" variant="ghost" aria-label="Delete sale" onClick={() => setDeleteSaleId(s.id)}><Trash2 className="size-4" /></Button>
+                    <AlertDialog open={deleteSaleId === s.id} onOpenChange={(open) => { if (!open && !deletingSale) setDeleteSaleId(null); }}>
+                      <AlertDialogContent className="max-w-sm">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete this sale?</AlertDialogTitle>
+                          <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel disabled={deletingSale}>Cancel</AlertDialogCancel>
+                          <Button variant="destructive" disabled={deletingSale} onClick={() => void deleteSale(s.id)}>{deletingSale ? "Deleting..." : "Delete sale"}</Button>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </td>
                 </tr>
               ))}

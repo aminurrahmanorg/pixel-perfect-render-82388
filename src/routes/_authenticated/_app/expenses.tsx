@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { EXPENSE_CATEGORIES, todayIn, useAccounts, useExpenses, useMoney, useRefresh, useRestaurant } from "@/lib/data";
 import { Plus, Trash2 } from "lucide-react";
@@ -22,7 +23,19 @@ function ExpensesPage() {
   const money = useMoney();
   const refresh = useRefresh();
   const [cat, setCat] = useState("all");
+  const [deleteExpenseId, setDeleteExpenseId] = useState<string | null>(null);
+  const [deletingExpense, setDeletingExpense] = useState(false);
   const list = expenses.filter((e) => cat === "all" || e.category === cat);
+
+  async function deleteExpense(id: string) {
+    setDeletingExpense(true);
+    const { error } = await supabase.from("expenses").delete().eq("id", id);
+    setDeletingExpense(false);
+    if (error) return void toast.error(error.message);
+    setDeleteExpenseId(null);
+    refresh();
+  }
+
   return (
     <div>
       <PageHeader title="Expenses" subtitle="Rent, salaries, utilities and everything else" action={<NewExpense />} />
@@ -50,11 +63,19 @@ function ExpensesPage() {
                   <td className="py-2">{accounts.find((a) => a.id === e.account_id)?.name ?? "—"}</td>
                   <td className="py-2 text-right font-medium">{money(Number(e.amount))}</td>
                   <td className="py-2 text-right">
-                    <Button size="icon" variant="ghost" aria-label="Delete" onClick={async () => {
-                      if (!confirm("Delete this expense?")) return;
-                      const { error } = await supabase.from("expenses").delete().eq("id", e.id);
-                      if (error) toast.error(error.message); else refresh();
-                    }}><Trash2 className="size-4" /></Button>
+                    <Button size="icon" variant="ghost" aria-label="Delete expense" onClick={() => setDeleteExpenseId(e.id)}><Trash2 className="size-4" /></Button>
+                    <AlertDialog open={deleteExpenseId === e.id} onOpenChange={(open) => { if (!open && !deletingExpense) setDeleteExpenseId(null); }}>
+                      <AlertDialogContent className="max-w-sm">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete this expense?</AlertDialogTitle>
+                          <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel disabled={deletingExpense}>Cancel</AlertDialogCancel>
+                          <Button variant="destructive" disabled={deletingExpense} onClick={() => void deleteExpense(e.id)}>{deletingExpense ? "Deleting..." : "Delete expense"}</Button>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </td>
                 </tr>
               ))}
